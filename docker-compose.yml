@@ -1,0 +1,58 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:17
+    container_name: permit_service_db
+    env_file: .env  # Load all variables from .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    networks:
+      - gov-network
+    volumes:
+      - permit_postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: permit_pgadmin
+    env_file: .env  # Load all variables from .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5051:80"
+    networks:
+      - gov-network
+    depends_on:
+      - postgres
+
+  permit-service:
+#    build: .
+    container_name: permit-service
+    image: ghaidaaeldsoky/permit-service
+    env_file: .env  # Load all variables from .env
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SERVER_PORT: ${SERVER_PORT}
+      USER_SERVICE_BASE_URL: http://user-service:8082/api/v1/admin/users   # <— key line
+    ports:
+      - "8083:${SERVER_PORT}"
+    networks:
+      - gov-network
+    depends_on:
+      - postgres
+#      - user-service
+      # postgres:
+      #   condition: service_healthy
+
+volumes:
+  permit_postgres_data:
+
+networks:
+  gov-network:
+    external: true
