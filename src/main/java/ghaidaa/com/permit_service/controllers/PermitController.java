@@ -24,8 +24,9 @@ public class PermitController {
     private PermitService service;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<PermitResponse>> create(@RequestBody PermitRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Permit created", service.create(request)));
+    public ResponseEntity<ApiResponse<PermitResponse>> create(@RequestBody PermitRequest request,
+                                                              @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return ResponseEntity.ok(ApiResponse.success("Permit created", service.create(request, authHeader)));
     }
 
     @GetMapping

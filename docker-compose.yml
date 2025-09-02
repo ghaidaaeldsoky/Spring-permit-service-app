@@ -14,6 +14,11 @@ services:
       - gov-network
     volumes:
       - permit_postgres_data:/var/lib/postgresql/data
+    healthcheck: # Add healthcheck
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   pgadmin:
     image: dpage/pgadmin4
@@ -30,9 +35,9 @@ services:
       - postgres
 
   permit-service:
-#    build: .
+    build: .
     container_name: permit-service
-    image: ghaidaaeldsoky/permit-service
+#    image: ghaidaaeldsoky/permit-service
     env_file: .env  # Load all variables from .env
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
@@ -45,7 +50,9 @@ services:
     networks:
       - gov-network
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy  # Wait for DB to be ready
+    restart: on-failure  # Auto-restart if DB connection fails initially
 #      - user-service
       # postgres:
       #   condition: service_healthy

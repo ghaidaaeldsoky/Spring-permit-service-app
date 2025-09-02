@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public interface PermitService {
 
-    PermitResponse create(PermitRequest request);
+    PermitResponse create(PermitRequest request, String authHeader);
 
     List<PermitResponse> getAll();
 

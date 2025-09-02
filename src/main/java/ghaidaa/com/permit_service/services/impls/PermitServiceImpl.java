@@ -17,6 +17,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -47,17 +50,34 @@ public class PermitServiceImpl implements PermitService {
 
     @Override
     @Transactional
-    public PermitResponse create(PermitRequest request) {
+    public PermitResponse create(PermitRequest request, String authHeader) {
         // Check if this ApplicantId is valid from user-service
         System.out.println("Creating new permit");
         System.out.println("Base Url: "+userServiceBaseUrl);
 //        var url = userServiceBaseUrl + "/api/v1/admin/users/";
         String userCheckUrl = String.format("%s/%s", userServiceBaseUrl, request.applicantId());
         try{
-            var userResponse = restTemplate.getForObject(
+
+            // Create headers with the authorization token
+            HttpHeaders headers = new HttpHeaders();
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                headers.set("Authorization", authHeader);
+            } else if (authHeader != null) {
+                // If the token doesn't have "Bearer " prefix, add it
+                headers.set("Authorization", "Bearer " + authHeader);
+            }
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+
+            var userResponse = restTemplate.exchange(
                     userCheckUrl,
+                    HttpMethod.GET,
+                    entity,
                     ApiResponse.class
-            );
+
+            ).getBody();
+
             System.out.println("After getting user response");
             if (userResponse == null || !"success".equals(userResponse.status())) {
                 throw new ResourceNotFoundException("Applicant not found in user-service");
